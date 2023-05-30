@@ -1,0 +1,326 @@
+---
+title: 'Google Data Analytics: Capstone Project'
+author: "Michael Anaga"
+date: "`r Sys.Date()`"
+output:
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+  html_document:
+    number_sections: yes
+    toc: yes
+    always_allow_html: yes
+subtitle: "Case Study: How Does a Bike-Share Navigate Speedy Success?"
+---
+
+## **Introduction**
+
+Welcome to the Cyclistic bike-share analysis case study! In this case study, you will perform many real-world tasks of a junior data analyst. You will work for a fictional company, Cyclistic, and meet different characters and team members.
+
+## **Scenario**
+
+As a junior data analyst working in the marketing analyst team at Cyclistic, a bike-share company in Chicago. The director of marketing believes the company's future success depends on maximizing the number of annual memberships.
+
+Therefore, the team wants to understand how casual riders and annual members use Cyclistic bikes differently. From these insights, the team will design a new marketing strategy to convert casual riders into annual members.
+
+## **Characters and teams**
+
+● **Cyclistic:** A bike-share program that features more than 5,800 bicycles and 600 docking stations. Cyclistic sets itself apart by also offering reclining bikes, hand tricycles, and cargo bikes, making bike-share more inclusive to people with disabilities and riders who can't use a standard two-wheeled bike. The majority of riders opt for traditional bikes; about 8% of riders use the assistive options. Cyclistic users are more likely to ride for leisure, but about 30% use them to commute to work each day.
+
+● **Lily Moreno**: The director of marketing and your manager. Moreno is responsible for the development of campaigns and initiatives to promote the bike-share program. These may include email, social media, and other channels.
+
+● **Cyclistic marketing analytics team:** A team of data analysts who are responsible for collecting, analyzing, and reporting data that helps guide Cyclistic marketing strategy. You joined this team six months ago and have been busy learning about Cyclistic's mission and business goals --- as well as how you, as a junior data analyst, can help Cyclistic achieve them.
+
+● **Cyclistic executive team:** The notoriously detail-oriented executive team will decide whether to approve the recommended marketing program.
+
+## **About the company**
+
+In 2016, Cyclistic launched a successful bike-share offering. Since then, the program has grown to a fleet of 5,824 bicycles that are geotracked and locked into a network of 692 stations across Chicago. The bikes can be unlocked from one station and returned to any other station in the system anytime.
+
+Until now, Cyclistic's marketing strategy relied on building general awareness and appealing to broad consumer segments. One approach that helped make these things possible was the flexibility of its pricing plans: single-ride passes, full-day passes, and annual memberships. Customers who purchase single-ride or full-day passes are referred to as casual riders. Customers who purchase annual memberships are Cyclistic members.
+
+Cyclistic's finance analysts have concluded that annual members are much more profitable than casual riders. Although the pricing flexibility helps Cyclistic attract more customers, Moreno believes that maximizing the number of annual members will be key to future growth. Rather than creating a marketing campaign that targets all-new customers, Moreno believes there is a very good chance to convert casual riders into members. She notes that casual riders are already aware of the Cyclistic program and have chosen Cyclistic for their mobility needs.
+
+Moreno has set a clear goal: Design marketing strategies aimed at converting casual riders into annual members. In order to do that, however, the marketing analyst team needs to better understand how annual members and casual riders differ, why casual riders would buy a membership, and how digital media could affect their marketing tactics. Moreno and her team are interested in analyzing the Cyclistic historical bike trip data to identify trends.
+
+## **Ask (The reason for the analysis)**
+
+1.  How do annual members and casual riders use Cyclistic bikes differently?
+2.  Why would casual riders buy Cyclistic annual memberships?
+3.  How can Cyclistic use digital media to influence casual riders to become members?
+
+## **Preparing Data**
+
+Using the Cyclistic's historical trip data to analyze and identify trends. Downloaded the previous 12 months of Cyclistic trip data. (Note: For the purposes of this case study, the datasets are appropriate and will enable answering the business questions. The data has been made available by Motivate International Inc. under this license.)
+
+## **Processing & Analyze Data**
+
+#### Install / Load the packages
+
+```{r results='hide', message=FALSE}
+
+# Importing libraries
+
+library(flexdashboard)
+library(tidyverse)
+library(highcharter)
+library(gt)
+library(htmltools)
+library(viridis)
+library(hms)
+```
+
+#### Importing data and creating a dataframe
+
+```{r}
+
+# Importing data
+
+jan <- read_csv("~/Case Study/bike_trip2022/csv/january2022.csv", show_col_types = FALSE)
+feb <- read_csv("~/Case Study/bike_trip2022/csv/february2022.csv", show_col_types = FALSE)
+mar <- read_csv("~/Case Study/bike_trip2022/csv/march2022.csv", show_col_types = FALSE)
+apr <- read_csv("~/Case Study/bike_trip2022/csv/april2022.csv", show_col_types = FALSE)
+may <- read_csv("~/Case Study/bike_trip2022/csv/may2022.csv", show_col_types = FALSE)
+jun <- read_csv("~/Case Study/bike_trip2022/csv/june2022.csv", show_col_types = FALSE)
+jul <- read_csv("~/Case Study/bike_trip2022/csv/july2022.csv", show_col_types = FALSE)
+aug <- read_csv("~/Case Study/bike_trip2022/csv/august2022.csv", show_col_types = FALSE)
+sep <- read_csv("~/Case Study/bike_trip2022/csv/september2022.csv", show_col_types = FALSE)
+oct <- read_csv("~/Case Study/bike_trip2022/csv/october2022.csv", show_col_types = FALSE)
+nov <- read_csv("~/Case Study/bike_trip2022/csv/november2022.csv", show_col_types = FALSE)
+dec <- read_csv("~/Case Study/bike_trip2022/csv/december2022.csv", show_col_types = FALSE)
+
+
+# Merging Dataframes
+
+bike_trip <- rbind(jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec)
+
+
+# Removing duplicates and nulls
+
+bike_trip <- bike_trip %>% 
+  distinct(ride_id, rideable_type, started_at, ended_at, member_casual)
+
+
+bike_trip <- bike_trip %>% 
+  drop_na()
+
+
+# Creating ride distance column
+
+bike_trip <- bike_trip %>%
+  mutate(ride_length = as_hms(dmy_hm(ended_at) - dmy_hm(started_at)),
+         ride_length = format(ride_length, format = "%M:%S"))
+
+
+# Creating a column for months for the Year
+
+bike_trip <- bike_trip %>%
+  mutate(month = month(started_at, label = TRUE))
+
+
+# Creating a numeric column for day of the week
+
+bike_trip <- bike_trip %>%
+  mutate(day_of_week = wday(dmy_hms(started_at), label = FALSE))
+
+
+
+# View the new dataframe
+
+bike_trip <- bike_trip %>% 
+  arrange(started_at)
+
+
+head(bike_trip)
+
+```
+
+## **Share Data through Visualization** {.tabset .tabset-fade}
+
+### Plot 1
+
+```{r}
+
+# How members and casual riders use Cyclistic bikes differently
+
+# Plotting riders by member type (rideable type) using highcharter
+
+results <- bike_trip %>%
+  group_by(day_of_week, rideable_type, member_casual) %>%
+  count(rideable_type) %>%
+  rename(count = n)
+
+hc_data <- results %>%
+  hchart("column", 
+         hcaes(x = member_casual, y = count, group = rideable_type),
+         color = viridis::turbo(3)) %>%
+  hc_xAxis(categories = c("member", "casual")) %>%
+  hc_yAxis(title = list(text = "Count of Riders")) %>%
+  hc_legend(enabled = TRUE) %>%
+  hc_title(text = "Count of Riders by Rideable Type") %>%
+  hc_subtitle(text = "The Bike They chose")
+
+hc_data
+
+```
+
+### Plot 2
+
+```{r}
+
+# How members and casual riders use Cyclistic bikes differently
+
+# Plotting ride length by member type using highcharter
+
+    data <- data.frame(
+      member_casual = c("casual", "member"),
+      average_length = c(22.197, 12.538)
+    )
+    hc1 <- highchart() %>%
+      hc_chart(type = "column") %>%
+      hc_title(text = "Average Ride Length by Member Type in 2022") %>%
+      hc_xAxis(categories = data$member_casual) %>%
+      hc_yAxis(title = list(text = "Average Ride Length (Seconds)")) %>%
+      hc_add_series(name = "Average Ride Length", data = data$average_length, colors = viridis::cividis(2)) %>%
+  hc_plotOptions(column = list(colorByPoint = TRUE)) %>%
+  hc_legend(enabled = FALSE)
+     
+    hc1
+    
+```
+
+### Plot 3
+
+```{r}
+
+# Counting rides by day of the week and member type using highcharter
+
+# Counting rides by day of the week and member type
+
+ride_counts <- bike_trip %>%
+  group_by(day_of_week, member_casual) %>%
+  count()
+
+# Plotting ride counts by day of the week using Highcharter
+
+hchart(ride_counts, "column", hcaes(y = n, group = member_casual)) %>%
+  hc_xAxis(type = "category", categories = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
+           title = list(text = "Accumulated Weekday")) %>%
+  hc_yAxis(title = list(text = "Ride Counts")) %>%
+  hc_legend(title = list(text = "Member Type"), layout = "vertical", align = "right", verticalAlign = "middle") %>%
+  hc_title(text = "Ride Counts by Day of the Week in 2022") 
+
+```
+
+### Plot 4
+
+```{r}
+
+# Calculate conversion rates by day of the week
+
+conversion_rates <- bike_trip %>%
+  group_by(day_of_week, member_casual) %>%
+  count() %>%
+  spread(member_casual, n) %>%
+  mutate(conversion_rate = member / (member + casual) * 100)
+
+# Plotting the conversion rates by day of the week using the highchart
+
+hc <- highchart() %>%
+  hc_chart(type = "line") %>%
+  hc_title(text = "Conversion Rates of Casual Riders to Members by Day of the Week in 2022") %>%
+  hc_xAxis(title = list(text = "Day of Week"), categories = conversion_rates$day_of_week) %>%
+  hc_yAxis(title = list(text = "Conversion Rate (%)")) %>%
+  hc_add_series(name = "Conversion Rate", data = conversion_rates$conversion_rate, colors = viridis::viridis_pal(1)) %>%
+  hc_plotOptions(column = list(colorByPoint = TRUE)) %>%
+  hc_legend(enabled = FALSE)
+
+hc
+
+```
+
+### Plot 5
+
+```{r}
+
+# Why would casual riders buy Cyclistic annual memberships?
+
+# Calculate figures using a formula
+result <- bike_trip %>%
+  count(member_casual) %>%
+  rename(count = n)
+
+
+# Plotting the total riders by member riders & casual riders using the highchart
+
+hc <- highchart() %>%
+  hc_chart(type = "column") %>%
+  hc_title(text = "Count of Riders by Member Type") %>%
+  hc_xAxis(categories = result$member_casual) %>%
+  hc_yAxis(title = list(text = "Count of Riders")) %>%
+  hc_add_series(name = "Rider Type", data = result$count, colors = viridis::cividis(2)) %>%
+  hc_plotOptions(column = list(colorByPoint = TRUE)) %>%
+  hc_legend(enabled = FALSE)
+
+hc
+
+```
+
+### Plot 6
+
+```{r}
+
+# Aggregate the ride counts by month and member type
+
+ride_count <- bike_trip %>%
+  group_by(month, member_casual) %>%
+  count()
+
+# Filter the data for member rides
+member_counts <- ride_count %>%
+  filter(member_casual == "member")
+
+# Filter the data for casual rides
+casual_counts <- ride_count %>%
+  filter(member_casual == "casual")
+
+
+hchart(member_counts, "column", hcaes(x = month, y = n, group = member_casual)) %>%
+   hc_add_series(casual_counts, "line", hcaes(x = month, y = n, group = member_casual), color = "brown") %>%
+  hc_xAxis(type = "category", title = list(text = "Month of the Year")) %>%
+  hc_yAxis(title = list(text = "Ride Counts")) %>%
+  hc_legend(title = list(text = "Member Type"), layout = "vertical", align = "right", verticalAlign = "middle") %>%
+  hc_title(text = "Ride Counts by Month in 2022")
+
+```
+
+## **Summary of the analysis**
+
+-   Cyclistic members rode 15% more classic bikes compared to Casual riders, and they also rode 7.8% more electric bikes compared to Casual riders. Additionally, Casual riders predominantly used docked bikes, accounting for nearly 99% of their rides, which amounted to fewer than 45,000 rides.
+
+-   The average ride duration for Casual riders was 22 minutes, while for Cyclistic members, it was 12 minutes. This indicates that, on average, Casual riders spend approximately 29.4% more time riding a bike compared to Cyclistic members.
+
+-   The analysis reveals that Casual riders utilize Cyclistic bikes more frequently than Cyclistic members on Fridays, with a notable difference of approximately 2.8% over the course of a year. While the rest day of the week is more commonly used by Cyclistic members.
+
+-   The analysis indicates that Monday has the highest conversion rate of Casual riders transitioning to become Cyclistic members, with approximately 66.5% conversion rate. Conversely, Friday has the lowest conversion rate of 48.6%.
+
+-   In 2022, Cyclistic members accounted for 59.4% of the total riders, while Casual riders made up 40.6%. This results in a difference of 18.8% between the two groups.
+
+-   The analysis reveals that in regards to Cyclistic members, June and July exhibit a marginal difference of approximately 4% and 3% respectively when compared to Casual riders.
+
+-   August recorded the highest number of rides for Cyclistic members, while January had the lowest number of rides for Cyclistic members.
+
+-   June recorded the highest number of rides for Casual riders, while January had the lowest number of rides for Casual riders.
+
+## **Act / Proposal**
+
+Based on the analysis, it is evident that June, July, and August experienced the highest number of casual riders in 2022. This observation suggests that leveraging digital marketing and advertising, along with additional incentives, during these three months could effectively influence casual riders to convert into Cyclistic members.
+
+In terms of ridership distribution, Cyclistic members accounted for 59.4% of the total riders in 2022, while casual riders comprised 40.6%. This significant difference of 18.8% between the two groups presents an opportunity to target and convert a portion or all of the 40.6% daily registered casual riders and new riders into Cyclistic members.
+
+-   To facilitate this conversion, I would recommend implementing frequent promotional campaigns targeting the working class, offering discounted fees to riders with disabilities, and designing refined incentives for individuals using Cyclistic bikes for sports or leisure purposes. These strategies aim to attract and incentivize casual riders to transition into becoming dedicated Cyclistic members.
+
+The analysis indicates that Cyclistic members primarily utilize the bike-sharing service for leisure purposes, as indicated by the recorded average ride duration of 12 minutes in 2022. Conversely, casual riders tend to use Cyclistic bikes for commuting to work or engaging in sport-related activities, resulting in a higher average ride duration of approximately 22 minutes in 2022. This then suggest that for casual riders to convert to Cyclistic member, a sport type of bike may be needed to help facilitate the conversion
+
+-   Considering this information, it suggests that to facilitate the conversion of casual riders into Cyclistic members, offering a sport-type bike option could be beneficial. Providing a bike model specifically designed for sport and leisure purposes might attract casual riders who use the bikes for sporting activities and encourage them to become dedicated Cyclistic members. This tailored approach could enhance the overall appeal and suitability of the bike-sharing service for this particular group of riders.
