@@ -3,14 +3,14 @@ title: 'Google Data Analytics: Capstone Project'
 author: "Michael Anaga"
 date: "`r Sys.Date()`"
 output:
-  word_document:
-    toc: yes
-  pdf_document:
-    toc: yes
   html_document:
     number_sections: yes
     toc: yes
     always_allow_html: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
 subtitle: "Case Study: How Does a Bike-Share Navigate Speedy Success?"
 ---
 
@@ -77,18 +77,18 @@ library(hms)
 
 # Importing data
 
-jan <- read_csv("~/Case Study/bike_trip2022/csv/january2022.csv", show_col_types = FALSE)
-feb <- read_csv("~/Case Study/bike_trip2022/csv/february2022.csv", show_col_types = FALSE)
-mar <- read_csv("~/Case Study/bike_trip2022/csv/march2022.csv", show_col_types = FALSE)
-apr <- read_csv("~/Case Study/bike_trip2022/csv/april2022.csv", show_col_types = FALSE)
-may <- read_csv("~/Case Study/bike_trip2022/csv/may2022.csv", show_col_types = FALSE)
-jun <- read_csv("~/Case Study/bike_trip2022/csv/june2022.csv", show_col_types = FALSE)
-jul <- read_csv("~/Case Study/bike_trip2022/csv/july2022.csv", show_col_types = FALSE)
-aug <- read_csv("~/Case Study/bike_trip2022/csv/august2022.csv", show_col_types = FALSE)
-sep <- read_csv("~/Case Study/bike_trip2022/csv/september2022.csv", show_col_types = FALSE)
-oct <- read_csv("~/Case Study/bike_trip2022/csv/october2022.csv", show_col_types = FALSE)
-nov <- read_csv("~/Case Study/bike_trip2022/csv/november2022.csv", show_col_types = FALSE)
-dec <- read_csv("~/Case Study/bike_trip2022/csv/december2022.csv", show_col_types = FALSE)
+jan <- read_csv("~/Case Study/bike_trip2022/Materials/csv/january2022.csv", show_col_types = FALSE)
+feb <- read_csv("~/Case Study/bike_trip2022/Materials/csv/february2022.csv", show_col_types = FALSE)
+mar <- read_csv("~/Case Study/bike_trip2022/Materials/csv/march2022.csv", show_col_types = FALSE)
+apr <- read_csv("~/Case Study/bike_trip2022/Materials/csv/april2022.csv", show_col_types = FALSE)
+may <- read_csv("~/Case Study/bike_trip2022/Materials/csv/may2022.csv", show_col_types = FALSE)
+jun <- read_csv("~/Case Study/bike_trip2022/Materials/csv/june2022.csv", show_col_types = FALSE)
+jul <- read_csv("~/Case Study/bike_trip2022/Materials/csv/july2022.csv", show_col_types = FALSE)
+aug <- read_csv("~/Case Study/bike_trip2022/Materials/csv/august2022.csv", show_col_types = FALSE)
+sep <- read_csv("~/Case Study/bike_trip2022/Materials/csv/september2022.csv", show_col_types = FALSE)
+oct <- read_csv("~/Case Study/bike_trip2022/Materials/csv/october2022.csv", show_col_types = FALSE)
+nov <- read_csv("~/Case Study/bike_trip2022/Materials/csv/november2022.csv", show_col_types = FALSE)
+dec <- read_csv("~/Case Study/bike_trip2022/Materials/csv/december2022.csv", show_col_types = FALSE)
 
 
 # Merging Dataframes
@@ -121,8 +121,9 @@ bike_trip <- bike_trip %>%
 
 # Creating a numeric column for day of the week
 
+
 bike_trip <- bike_trip %>%
-  mutate(day_of_week = wday(dmy_hms(started_at), label = FALSE))
+  mutate(day_of_week = wday(dmy_hms(started_at), label = FALSE, week_start = 5))
 
 
 
@@ -301,9 +302,9 @@ hchart(member_counts, "column", hcaes(x = month, y = n, group = member_casual)) 
 
 -   The average ride duration for Casual riders was 22 minutes, while for Cyclistic members, it was 12 minutes. This indicates that, on average, Casual riders spend approximately 29.4% more time riding a bike compared to Cyclistic members.
 
--   The analysis reveals that Casual riders utilize Cyclistic bikes more frequently than Cyclistic members on Fridays, with a notable difference of approximately 2.8% over the course of a year. While the rest day of the week is more commonly used by Cyclistic members.
+-   The analysis reveals that Casual riders utilize Cyclistic bikes more frequently than Cyclistic members on Sundays, with a notable difference of approximately 2.8% over the course of a year. While the rest day of the week is more commonly used by Cyclistic members.
 
--   The analysis indicates that Monday has the highest conversion rate of Casual riders transitioning to become Cyclistic members, with approximately 66.5% conversion rate. Conversely, Friday has the lowest conversion rate of 48.6%.
+-   The analysis indicates that Wednesday has the highest conversion rate of Casual riders transitioning to become Cyclistic members, with approximately 66.5% conversion rate. Conversely, Sunday has the lowest conversion rate of 48.6%.
 
 -   In 2022, Cyclistic members accounted for 59.4% of the total riders, while Casual riders made up 40.6%. This results in a difference of 18.8% between the two groups.
 
