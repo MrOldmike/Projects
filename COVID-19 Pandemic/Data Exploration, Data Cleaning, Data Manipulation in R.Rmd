@@ -1,0 +1,566 @@
+---
+title: "COVID-19 Pandemic"
+author: "Michael Anaga"
+date: "`r Sys.Date()`"
+output: html_notebook
+---
+
+
+## **Objective**
+
+"Data Exploration, Data Cleaning, Data Manipulation, Data Visualization(R/Tableau)"
+
+
+## Data Import
+
+This is where we got the data: <https://ourworldindata.org/coronavirus>
+
+
+```{r include = FALSE}
+
+# Load Packages
+library(tidyverse)
+
+
+# Loading / Import Data
+
+
+df <- read_csv("~/Case Study/covid-19/materials/owid-covid-data.csv")
+
+```
+
+
+# Data Exploration
+
+The last calculated total in May 31st, 2023 was `r covid19_pandemic`.
+
+
+```{r}
+
+# View of the Data and its Data types
+
+head(df)
+
+glimpse(df)
+
+summary(df)
+
+
+# Check for missing values NA in the entire data frame. 
+
+is.na(df)
+
+View(df[is.na(df$total_cases), ])
+
+
+# Identify rows with complete cases in the entire data frame
+
+complete.cases(df)
+
+
+# Subset the data frame to keep only rows with complete cases
+
+df[complete.cases(df), ]
+
+
+# Calculate summary statistics for all numeric variables. The na.rm argument tells R to remove any NA values before performing the calculation.
+
+df %>%
+  summarize(across(where(is.numeric), list(mean = mean, median = median, max = max), na.rm = TRUE))
+
+
+# Calculate summary statistics for 'total cases', 'total vaccinations', 'total deaths' variables.  
+
+df %>%
+  summarize(mean_cases = mean(total_cases, na.rm = TRUE),
+            median_vaccinations = median(total_vaccinations, na.rm = TRUE),
+            max_deaths = max(total_deaths, na.rm = TRUE))
+
+
+# Calculate total counts of NA in 'total cases', 'total vaccinations', 'total deaths' variables. 
+
+sum(is.na(df$total_cases))
+sum(is.na(df$total_vaccinations))
+sum(is.na(df$total_deaths))
+
+```
+
+```{r include = FALSE}
+
+covid19_pandemic <- df %>%
+  select(continent, date, new_cases, new_deaths, new_vaccinations, total_deaths) %>%
+  filter(!is.na(continent)) %>%
+  summarize(total_cases = sum((new_cases), na.rm = TRUE), total_deaths = sum((new_deaths), na.rm = TRUE), total_vaccinations = sum((new_vaccinations), na.rm = TRUE), death_percentage = (total_deaths/total_cases)*100) %>% 
+  view()
+
+head(covid19_pandemic)
+```
+
+
+# Data Cleaning
+
+
+```{r}
+# Variable types
+
+head (df)
+
+
+# Select Variables 
+
+names(df)
+
+df %>% 
+  select(continent,location,date,population,total_cases,new_cases,total_deaths,new_deaths,total_vaccinations,new_vaccinations) %>% 
+  names()
+
+
+# Find and deal with missing data
+
+unique(df$continent)
+
+unique(df$location)
+
+
+df %>% 
+  select(continent, location) %>%
+  count(continent, location) %>% 
+  filter(!complete.cases(.)) %>% 
+  view()
+
+
+df %>% 
+  select(continent,location,date,population,total_cases,new_cases,total_deaths,new_deaths,total_vaccinations,new_vaccinations) %>% 
+  drop_na(continent) %>% 
+  view()
+
+
+# Filter data
+
+df %>% 
+  select(continent,location,date,population,total_cases,new_cases,total_deaths,new_deaths,total_vaccinations,new_vaccinations) %>% 
+  filter(!is.na(continent)) %>%
+  names()
+
+
+# Find and deal with duplicates
+
+df %>% 
+  select(continent,location,date,population,total_cases,new_cases,total_deaths,new_deaths,total_vaccinations,new_vaccinations) %>% 
+  drop_na(continent) %>% 
+  distinct() %>% 
+  view()
+
+```
+
+
+# Data Manipulation
+
+
+```{r}
+
+## Total Cases vs Population
+### Shows what percentage of population infected with Covid
+
+df %>% 
+  select(continent,location,date,population,total_cases) %>% 
+  drop_na(continent) %>%
+  filter(location == "Canada") %>% 
+  mutate(percent_population_infected = (total_cases/population)*100, na.rm = TRUE) %>% 
+  arrange(location, date)
+
+
+CasesVsPop <-   df %>% 
+  select(continent,location,date,population,total_cases) %>% 
+  drop_na(continent) %>%
+  mutate(percent_population_infected = (total_cases/population)*100, na.rm = TRUE) %>% 
+  arrange(location, date) 
+
+
+```
+
+```{r}
+
+## Countries with Highest Infection Rate compared to Population
+
+df %>%
+  select(continent, location, population, total_cases) %>%
+  drop_na(continent) %>%
+  filter(location == "Canada") %>% 
+  group_by(location, population) %>%
+  summarize(percent_population_infected = max(total_cases / population * 100, na.rm = TRUE), highest_infection = max(total_cases, na.rm = TRUE)) %>%
+  arrange(desc(percent_population_infected))
+
+
+InfectionRate <- df %>%
+  select(continent, location, population, total_cases) %>%
+  drop_na(continent) %>%
+  group_by(location, population) %>%
+  summarize(percent_population_infected = max(total_cases / population * 100, na.rm = TRUE), highest_infection = max(total_cases, na.rm = TRUE)) %>%
+  arrange(desc(percent_population_infected))
+
+
+```
+
+```{r}
+
+## Total Cases vs Total Deaths
+### Shows likelihood of dying if you contract covid in your country
+
+df %>% 
+  select(continent,location,date,population,total_cases,total_deaths) %>% 
+  drop_na(continent) %>%
+  filter(location == "Canada") %>% 
+  mutate(death_percentage = (total_deaths/total_cases)*100, na.rm = TRUE) %>% 
+  arrange(location, date)
+
+
+InfectionVsDeaths <- df %>% 
+  select(continent,location,date,population,total_cases,total_deaths) %>% 
+  drop_na(continent) %>%
+  mutate(death_percentage = (total_deaths/total_cases)*100, na.rm = TRUE) %>% 
+  arrange(location, date)
+
+
+```
+
+```{r}
+
+## Countries with Highest Death Count per Population
+
+df %>%
+  select(continent, location, total_deaths) %>%
+  filter(!is.na(continent), location == "Canada") %>% 
+  group_by(location) %>%
+  summarize(highest_deaths = max(total_deaths, na.rm = TRUE))%>%
+  arrange(desc(highest_deaths))
+
+
+LocationDeathCount <- df %>%
+  select(continent, location, total_deaths) %>%
+  filter(!is.na(continent)) %>%
+  group_by(location) %>%
+  summarize(highest_deaths = max(as.integer(total_deaths), na.rm = TRUE)) %>%
+  arrange(desc(highest_deaths))
+
+
+```
+
+```{r}
+
+## BREAKING THINGS DOWN BY CONTINENT
+### Showing continents with the highest death count per population
+
+ContinentDeathCount <- df %>%
+  select(continent, total_deaths) %>%
+  filter(!is.na(continent)) %>%
+  group_by(continent) %>%
+  summarize(highest_deaths = max(as.integer(total_deaths), na.rm = TRUE)) %>%
+  arrange(desc(highest_deaths))
+
+
+df %>%
+  select(location, continent, total_deaths) %>%
+  filter(is.na(continent)) %>% 
+  group_by(location) %>%
+  summarize(highest_deaths = max(as.integer(total_deaths), na.rm = TRUE)) %>%
+  arrange(desc(highest_deaths))
+
+```
+
+```{r}
+
+## Daily total cases vs death percentage
+
+DailyDeathPercent <- df %>%
+  select(continent, date, new_cases, new_deaths, total_deaths) %>%
+  filter(!is.na(continent)) %>%
+  group_by(date) %>%
+  summarize(total_cases = sum((new_cases), na.rm = TRUE), total_deaths = sum((new_deaths), na.rm = TRUE), death_percentage = (total_deaths/total_cases)*100, na.rm = TRUE) %>% 
+arrange(date, total_cases)
+
+```
+
+```{r}
+
+## Grand Total of Cases Vs Death
+
+GrandTotal <- df %>%
+  select(continent, date, new_cases, new_deaths, total_deaths) %>%
+  filter(!is.na(continent)) %>%
+  summarize(total_cases = sum((new_cases), na.rm = TRUE), total_deaths = sum((new_deaths), na.rm = TRUE), death_percentage = (total_deaths/total_cases)*100, na.rm = TRUE)
+
+
+```
+
+```{r}
+
+## Total Population vs Vaccinations
+
+df %>%
+  select(continent, location, date, population, new_vaccinations) %>%
+  filter(!is.na(continent), location == "Canada") %>%
+  mutate(rolling_people_vaccinated = cumsum(coalesce(new_vaccinations, 0))) %>%
+  select(-new_vaccinations) %>%
+  arrange(location, date)
+
+
+df %>%
+  select(continent, location, date, population, new_vaccinations) %>%
+  filter(!is.na(continent)) %>%
+  group_by(location) %>%
+  mutate(rolling_people_vaccinated = cumsum(coalesce(new_vaccinations, 0))) %>%
+  select(-new_vaccinations) %>%
+  arrange(location, date)
+
+
+### Shows Percentage of Population that has received at least one Covid Vaccine
+
+df %>%
+  select(continent, location, date, population, new_vaccinations) %>%
+  filter(!is.na(continent), location == "Canada") %>%
+  mutate(rolling_people_vaccinated = cumsum(coalesce(new_vaccinations, 0)), people_vaccinated_percentage = (rolling_people_vaccinated/population)*100, na.rm = TRUE) %>%
+  select(-new_vaccinations) %>%
+  arrange(location, date)
+
+
+PopVsVaccine <- df %>%
+  select(continent, location, date, population, new_vaccinations) %>%
+  filter(!is.na(continent)) %>%
+  group_by(location) %>%
+  mutate(rolling_people_vaccinated = cumsum(coalesce(new_vaccinations, 0)), people_vaccinated_percentage = (rolling_people_vaccinated/population)*100, na.rm = TRUE) %>%
+  select(-new_vaccinations) %>%
+  arrange(location, date)
+
+
+```
+
+
+# Data Visualization
+
+
+```{r}
+
+CasesVsPopView <-   df %>% 
+  select(continent,location,date,population,total_cases) %>% 
+  drop_na(continent) %>%
+  mutate(percent_population_infected = (total_cases/population)*100, na.rm = TRUE) %>% 
+  arrange(location, date) %>% 
+  view()
+
+
+  ggplot(CasesVsPopView , aes(x = date, y = percent_population_infected, color = continent)) +
+  geom_point() +
+  labs(x = "Date", y = "Percent Population Infected") +
+  ggtitle("COVID-19 Infection Cases") +
+  theme_minimal()
+  
+
+```
+
+```{r}
+
+InfectionRateView <- df %>%
+  select(continent, location, population, total_cases) %>%
+  filter(!is.na(continent), location == "Israel"|location == "United Kingdom"|location == "Japan"|location == "Brazil"|location == "Canada"|location == "China"|location == "Nigeria") %>%
+  group_by(location, population) %>%
+  summarize(percent_population_infected = max(total_cases / population * 100, na.rm = TRUE), highest_infection = max(total_cases, na.rm = TRUE)) %>%
+  arrange(desc(percent_population_infected)) %>% 
+  view()
+
+
+ggplot(InfectionRateView, aes(x = location, y = percent_population_infected, fill = highest_infection)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Location", y = "Percent Population Infected", fill = "Highest Infection") +
+  ggtitle("COVID-19 Infection Rate by Selected Location") +
+  theme_minimal()
+
+
+```
+
+```{r}
+
+InfectionVsDeathsView <- df %>% 
+  select(continent,location,date,population,total_cases,total_deaths) %>% 
+  filter(!is.na(continent), location == "Israel"|location == "United Kingdom"|location == "Japan"|location == "Brazil"|location == "Canada"|location == "China"|location == "Nigeria") %>%
+  mutate(death_percentage = (total_deaths/total_cases)*100, na.rm = TRUE) %>% 
+  arrange(location, date)
+
+
+  ggplot(InfectionVsDeathsView, aes(x = date, y = death_percentage, color = location)) +
+  geom_line() +
+  labs(x = "Year", y = "Death Percentage", color = "Location", title = "COVID-19 Annual Death Percentage in Selected Location") +
+  theme_minimal()
+  
+  
+```
+
+```{r}
+
+LocationDeathCountView <- df %>%
+  select(continent, location, total_deaths) %>%
+  filter(!is.na(continent), location == "Israel"|location == "United Kingdom"|location == "Japan"|location == "Brazil"|location == "Canada"|location == "China"|location == "Nigeria") %>%
+  group_by(location) %>%
+  summarize(highest_deaths = max(as.integer(total_deaths), na.rm = TRUE)) %>%
+  arrange(desc(highest_deaths))
+
+
+  ggplot(LocationDeathCountView, aes(x = location, y = highest_deaths, fill = location)) +
+  geom_col(stat = "identity", fill = "steelblue") +
+  labs(x = "Location", y = "Highest Number of Deaths") +
+  ggtitle("COVID-19: Highest Number of Deaths in Selected Locations") +
+  theme_minimal()
+  
+  
+```
+
+```{r}
+
+ContinentDeathCountView <- df %>%
+  select(continent, total_deaths) %>%
+  filter(!is.na(continent)) %>%
+  group_by(continent) %>%
+  summarize(highest_deaths = max(as.integer(total_deaths), na.rm = TRUE)) %>%
+  arrange(desc(highest_deaths))
+
+
+ggplot(ContinentDeathCountView, aes(continent, highest_deaths, fill = continent)) +
+  geom_col() + 
+  labs(x = "Continent", y = "Highest Deaths", title = "COVID-19 Continent Death Counts") + 
+  theme_light()
+
+
+```
+
+```{r}
+
+DailyDeathPercentView <- df %>%
+  select(continent, date, new_cases, new_deaths, total_deaths) %>%
+  filter(!is.na(continent)) %>%
+  group_by(date) %>%
+  summarize(total_cases = sum((new_cases), na.rm = TRUE), total_deaths = sum((new_deaths), na.rm = TRUE), death_percentage = (total_deaths/total_cases)*100, na.rm = TRUE) %>% 
+arrange(date, total_cases)
+
+
+ggplot(DailyDeathPercentView, aes(date, death_percentage, fill = total_deaths)) + geom_col() + 
+  labs(x = "Date", y = "Death Percentage", fill = "Total Deaths", title = "COVID-19 Daily Death Percentage") +
+  theme_light()
+
+
+```
+
+```{r}
+
+GrandTotalView <- df %>%
+  select(continent, date, new_cases, new_deaths, total_deaths) %>%
+  filter(!is.na(continent)) %>%
+  summarize(total_cases = sum((new_cases), na.rm = TRUE), total_deaths = sum((new_deaths), na.rm = TRUE), death_percentage = (total_deaths/total_cases)*100, na.rm = TRUE)
+
+
+ggplot(GrandTotalView, aes(total_cases, death_percentage, fill = total_deaths)) + geom_point()+
+  labs(x = "Total Cases", y = "Death Percentage", fill = "Total Deaths", title = "COVID-19 Total Cases vs. Death Percentage") +
+  theme_minimal()
+
+
+```
+
+```{r}
+
+PopVsVaccineView <- df %>%
+  select(continent, location, date, population, new_vaccinations) %>%
+  filter(!is.na(continent)) %>%
+  group_by(location) %>%
+  mutate(rolling_people_vaccinated = cumsum(coalesce(new_vaccinations, 0)), people_vaccinated_percentage = (rolling_people_vaccinated/population)*100, na.rm = TRUE) %>%
+  select(-new_vaccinations) %>%
+  arrange(location, date)
+
+
+ggplot(PopVsVaccineView, aes(x = continent, y = people_vaccinated_percentage, fill = continent)) +
+  geom_col() +
+  labs(x = "Continent", y = "People Vaccinated Percentage", color = "Continent") +
+  ggtitle("COVID-19 Vaccination Progress") +
+  theme_minimal()
+
+
+```
+
+
+# Exporting Data for Visualization in Tableau/PowerBI
+
+
+```{r}
+
+df %>% 
+  select(continent,location,date,population,total_cases) %>% 
+  drop_na(continent) %>%
+  mutate(percent_population_infected = (total_cases/population)*100, na.rm = TRUE) %>% 
+  arrange(location, date) %>% 
+  write_csv("CasesVsPop.csv")
+
+
+df %>%
+  select(continent, location, population, total_cases) %>%
+  drop_na(continent) %>%
+  group_by(location, population) %>%
+  summarize(percent_population_infected = max(total_cases / population * 100, na.rm = TRUE), highest_infection = max(total_cases, na.rm = TRUE)) %>%
+  arrange(desc(percent_population_infected)) %>% 
+  write_csv("InfectionRate.csv")
+
+
+df %>% 
+  select(continent,location,date,population,total_cases,total_deaths) %>% 
+  drop_na(continent) %>%
+  mutate(death_percentage = (total_deaths/total_cases)*100, na.rm = TRUE) %>% 
+  arrange(location, date) %>% 
+  write_csv("InfectionVsDeaths.csv")
+
+
+df %>%
+  select(continent, location, total_deaths) %>%
+  filter(!is.na(continent)) %>%
+  group_by(location) %>%
+  summarize(highest_deaths = max(as.integer(total_deaths), na.rm = TRUE)) %>%
+  arrange(desc(highest_deaths)) %>% 
+  write_csv("LocationDeathCount.csv")
+
+
+df %>%
+  select(continent, total_deaths) %>%
+  filter(!is.na(continent)) %>%
+  group_by(continent) %>%
+  summarize(highest_deaths = max(as.integer(total_deaths), na.rm = TRUE)) %>%
+  arrange(desc(highest_deaths)) %>% 
+  write_csv("ContinentDeathCount.csv")
+
+
+df %>%
+  select(continent, date, new_cases, new_deaths, total_deaths) %>%
+  filter(!is.na(continent)) %>%
+  group_by(date) %>%
+  summarize(total_cases = sum((new_cases), na.rm = TRUE), total_deaths = sum((new_deaths), na.rm = TRUE), death_percentage = (total_deaths/total_cases)*100, na.rm = TRUE) %>% 
+arrange(date, total_cases) %>% 
+  write_csv("DailyDeathPercent.csv")
+
+
+df %>%
+  select(continent, date, new_cases, new_deaths, total_deaths) %>%
+  filter(!is.na(continent)) %>%
+  summarize(total_cases = sum((new_cases), na.rm = TRUE), total_deaths = sum((new_deaths), na.rm = TRUE), death_percentage = (total_deaths/total_cases)*100, na.rm = TRUE) %>% 
+  write_csv("GrandTotal.csv")
+
+
+df %>%
+  select(continent, location, date, population, new_vaccinations) %>%
+  filter(!is.na(continent)) %>%
+  group_by(location) %>%
+  mutate(rolling_people_vaccinated = cumsum(coalesce(new_vaccinations, 0)), people_vaccinated_percentage = (rolling_people_vaccinated/population)*100, na.rm = TRUE) %>%
+  select(-new_vaccinations) %>%
+  arrange(location, date) %>% 
+  write_csv("PopVsVaccine.csv")
+
+
+```
+
+
+This is where the data visualization is: <https://mroldmike.github.io/michaelanaga.github.io/#portfolio>
+

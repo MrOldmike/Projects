@@ -1,0 +1,9 @@
+COVID-19 Pandemic (R Programming)
+Michael Anaga
+2023-07-01
+
+Objective
+“Data Exploration, Data Cleaning, Data Manipulation, Data Visualization(R/Tableau)”
+
+
+This is where we got the data: https://ourworldindata.org/coronavirus
